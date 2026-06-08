@@ -1,2 +1,2 @@
-# Syncytial coupling of mid-capillary pericytes underlies seizure-associated electro-metabolic signaling.
-Code and analysis scripts for the paper "Syncytial coupling of mid-capillary pericytes underlies seizure-associated electro-metabolic signaling"
+# Syncytial coupling of mid-capillary pericytes underlies seizure-associated electro-metabolic signaling
+This repository contains the Python and R analysis scripts used to generate the figures and statistical results for the publication "Syncytial coupling of mid-capillary pericytes underlies seizure-associated electro-metabolic signaling". It includes pipelines for morphological clustering, electrophysiology data visualization, and calcium imaging analysis.
