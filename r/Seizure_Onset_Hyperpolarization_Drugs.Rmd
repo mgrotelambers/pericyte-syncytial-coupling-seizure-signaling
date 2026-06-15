@@ -1,0 +1,65 @@
+---
+title: "Seizure_Onset_Hyperpolarization_Drugs"
+author: "Mirja grote Lambers"
+date: "2026-05-30"
+output: html_document
+---
+  
+This script calculates descriptive statistics (mean ± SEM, median, SD, n) and assesses normality (Shapiro-Wilk test, histogram, QQ-plot) of the pericyte hyperpolarization delta Vm per treatment group. Delta Vm is defined as the difference between resting Vm prior to U46619 and the maximum pre-seizure hyperpolarization. Values close to zero indicate complete repolarization upon epileptiform activity. A Dunnett-type contrast test (nparcomp::mctp) compares each drug condition against the U46619 + 4AP reference group.
+
+H0: Delta Vm does not differ systematically between any drug condition and the U46619 + 4AP reference group (relative effect p = 0.5 for all contrasts).
+
+H1: At least one drug condition produces a delta Vm that differs systematically from the reference group (relative effect p ≠ 0.5 for at least one contrast).
+
+library(nparcomp)
+
+# load data
+df <- read.csv("Seizure_Onset_Hyperpolarization_Drugs.csv")
+colnames(df) <- c("file", "y0", "y1", "delta", "g")
+
+# groups
+group_levels <- c(
+  "U46619 + 4AP",
+  "U46619 + Carboxy-PTIO + L-NMMA + 4AP",
+  "U46619 + CGS + 4AP",
+  "U46619 + ZM 241385 + 4AP",
+  "U46619 + Barium + 4AP"
+)
+df$g <- factor(df$g, levels = group_levels)
+
+# descriptive statistics
+invisible(Map(function(grp) {
+  x      <- df$delta[df$g == grp]
+  n      <- length(x)
+  sd_val <- sd(x)
+  sw     <- shapiro.test(x)
+  cat(sprintf("Group:         %s\n",                      grp))
+  cat(sprintf("  n            = %d\n",                    n))
+  cat(sprintf("  Mean ± SEM   = %.2f ± %.2f mV\n",       mean(x), sd_val / sqrt(n)))
+  cat(sprintf("  Median       = %.2f mV\n",               median(x)))
+  cat(sprintf("  SD           = %.2f mV\n",               sd_val))
+  cat(sprintf("  Shapiro-Wilk : W = %.3f, p = %.3f\n\n", sw$statistic, sw$p.value))
+}, group_levels))
+
+# normality plots
+par(mfrow = c(length(group_levels), 2), mar = c(4, 4, 3, 1), cex.main = 0.8)
+invisible(Map(function(grp) {
+  x <- df$delta[df$g == grp]
+  hist(x, freq = FALSE, breaks = 10, col = "steelblue", border = "white",
+       main = paste0(grp, " — Histogram"),
+       xlab = expression(Delta * "V"[m] ~ "(mV)"), ylab = "Density")
+  qqnorm(x, main = paste0(grp, " — QQ-Plot"))
+  qqline(x, col = "red")
+}, group_levels))
+par(mfrow = c(1, 1), mar = c(5, 4, 4, 2) + 0.1, cex.main = 1)
+
+# dunnett-type contrast test
+set.seed(42)
+invisible(capture.output(
+  results <- mctp(delta ~ g, data = df, type = "Dunnett",
+                  alternative = "two.sided", plot.simci = TRUE, rounds = 6)
+))
+summary(results)
+
+
+
