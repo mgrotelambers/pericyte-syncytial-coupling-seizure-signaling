@@ -1,0 +1,43 @@
+---
+title: "Statistics_Pericyte_Resting_Membrane_Potential"
+author: "Mirja grote Lambers"
+date: "2026-05-30"
+output: html_document
+---
+  
+This script calculates descriptive statistics (mean ± SEM, median, SD, n) and assesses the normality of the distribution (Shapiro-Wilk test, histogram, QQ-plot) of the pericyte resting membrane potential recorded from patched pericytes in OHSC with high and low chloride intracellular solutions.
+
+# load data
+df        <- read.csv("Pericyte_Resting_Membrane_Potential.csv")
+
+value_col <- "I.0.Median"
+group_col <- "Intracellular.Soloution"  # typo in CSV column name
+
+df <- df[!is.na(df[[value_col]]) & !is.na(df[[group_col]]) & df[[group_col]] != "", ]
+
+groups <- list(
+  "High-Cl Potassium Gluconate" = df[[value_col]][df[[group_col]] == "High-Cl Potassium Gluconate"],
+  "Low-Cl Potassium Gluconate"  = df[[value_col]][df[[group_col]] == "Low-Cl Potassium Gluconate"]
+)
+
+# descriptive statistics
+for (name in names(groups)) {
+  data   <- groups[[name]]
+  n      <- length(data)
+  sd_val <- sd(data)
+  sw     <- shapiro.test(data)
+  cat(sprintf("\n%s\n", name))
+  cat(sprintf("n          = %d\n",              n))
+  cat(sprintf("Mean ± SEM = %.2f ± %.2f mV\n", mean(data), sd_val / sqrt(n)))
+  cat(sprintf("Median     = %.1f mV\n",         median(data)))
+  cat(sprintf("SD         = %.2f mV\n",         sd_val))
+  cat(sprintf("Shapiro-Wilk: W = %.3f, p = %.3f\n", sw$statistic, sw$p.value))
+  par(mfrow = c(1, 2))
+  hist(data, freq = FALSE, breaks = 10, col = "steelblue", border = "white",
+       main = paste(name, "— Histogram"), xlab = "Resting Vm (mV)", ylab = "Density")
+  qqnorm(data, main = paste(name, "— QQ-Plot"))
+  qqline(data, col = "red")
+  par(mfrow = c(1, 1))
+}
+
+
