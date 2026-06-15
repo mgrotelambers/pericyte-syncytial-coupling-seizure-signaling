@@ -53,7 +53,7 @@ invisible(Map(function(grp) {
 }, group_levels))
 par(mfrow = c(1, 1), mar = c(5, 4, 4, 2) + 0.1, cex.main = 1)
 
-# dunnett-type contrast test
+# dunnett nonparametric multiple contrast test
 set.seed(42)
 invisible(capture.output(
   results <- mctp(delta ~ g, data = df, type = "Dunnett",
