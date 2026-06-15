@@ -1,0 +1,39 @@
+---
+title: "Statistics_Astrocyte_Resting_Membrane_Potential"
+author: "Mirja grote Lambers"
+date: "2026-05-30"
+output: html_document
+---
+  
+This script calculates descriptive statistics (mean ± SEM, median, SD, n) and assesses the normality of the distribution (Shapiro-Wilk test, histogram, QQ-plot) of the resting
+membrane potential recorded from patched astrocytes in OHSC.
+
+
+# load data
+df   <- read.csv("Astrocyte_Resting_Membrane_Potential.csv")
+data <- na.omit(df$I.0.Median)
+
+# descriptive statistics
+n      <- length(data)
+sd_val <- sd(data)
+sem    <- sd_val / sqrt(n)
+sw     <- shapiro.test(data)
+
+cat(sprintf("n          = %d\n",                    n))
+cat(sprintf("Mean ± SEM = %.2f ± %.2f mV\n",       mean(data), sem))
+cat(sprintf("Median     = %.1f mV\n",               median(data)))
+cat(sprintf("SD         = %.2f mV\n",               sd_val))
+cat(sprintf("Shapiro-Wilk: W = %.3f, p = %.3f\n",  sw$statistic, sw$p.value))
+
+# normality plots
+par(mfrow = c(1, 2))
+hist(data, freq = FALSE, breaks = 10, col = "steelblue", border = "white",
+     main = "I=0 Median — Histogram", xlab = "V_rest (mV)", ylab = "Density")
+qqnorm(data, main = "I=0 Median — QQ-Plot")
+qqline(data, col = "red")
+par(mfrow = c(1, 1))
+  
+
+
+
+
