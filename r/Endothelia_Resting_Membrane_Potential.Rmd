@@ -1,0 +1,42 @@
+---
+title: "Endothelia_Resting_Membrane_Potential"
+author: "Mirja grote Lambers"
+date: "2026-05-30"
+output: html_document
+---
+  
+This script calculates descriptive statistics (mean ± SEM, median, SD, n) and assesses the normality of the distribution (Shapiro-Wilk test, histogram, QQ-plot) of the resting membrane potential (Vm) and input resistance (Ri) recorded from patched endothelia in OHSC.
+
+# load data
+df <- read.csv("Endothelia_Resting_Membrane_Potential.csv")
+
+# descriptive statistics
+statistics <- function(data, label, unit) {
+  data   <- na.omit(data)
+  n      <- length(data)
+  sd_val <- sd(data)
+  sw     <- shapiro.test(data)
+  
+  cat(sprintf("\n%s (n = %d)\n", label, n))
+  cat(sprintf("Mean ± SEM = %.2f ± %.2f %s\n", mean(data), sd_val / sqrt(n), unit))
+  cat(sprintf("Median     = %.1f %s\n",         median(data), unit))
+  cat(sprintf("SD         = %.2f %s\n",         sd_val, unit))
+  cat(sprintf("Shapiro-Wilk: W = %.3f, p = %.3f\n", sw$statistic, sw$p.value))
+  par(mfrow = c(1, 2))
+  
+  hist(data, freq = FALSE, breaks = 10, col = "steelblue", border = "white",
+       main = paste(label, "— Histogram"),
+       xlab = paste0(label, " (", unit, ")"), ylab = "Density")
+  qqnorm(data, main = paste(label, "— QQ-Plot"))
+  qqline(data, col = "red")
+  par(mfrow = c(1, 1))
+}
+
+invisible(Map(statistics,
+              list(df$I.0.Median, df$Ri),
+              label = c("Vm", "Ri"),
+              unit  = c("mV", "MΩ")))
+
+
+
+
