@@ -1,0 +1,98 @@
+---
+title: "Comparison_Vessel_Diameter_Pericyte_Length_Fluorescence_Change"
+author: "Mirja grote Lambers"
+date: "2026-05-03"
+output: html_document
+---
+
+This script calculates descriptive statistics (mean ± SEM, median, SD, n) and assesses normality (Shapiro-Wilk, histogram, QQ-plot) of the percentage change in pericyte vessel diameter, pericyte length, and fluorescence intensity across five experimental conditions.
+Whether values changed systematically from baseline is tested using a nonparametric studentized permutation test for paired data (npar.t.test.paired, nparcomp, Konietschke & Pauly, 2012).
+
+H0: The before and after measurements do not differ systematically (relative effect p = 0.5).
+
+H1: The before and after measurements differ systematically (relative effect p ≠ 0.5, two-sided).
+
+
+# load data
+df <- read.csv("Comparison_Vessel_Diameter_Pericyte_Length_Fluorescence_Change.csv")
+
+# pre-compute background-corrected fluorescence
+df$fluorescence_corrected_t1     <- df$fluorescence_intensity_t1_whole_cell - df$background_t1
+df$fluorescence_corrected_t6_t12 <- df$fluorescence_intensity_t6_t12_whole_cell - df$background_t6_t12
+
+# experimental groups
+groups <- c("control",
+            "current injection to 0 mV",
+            "current injection to -20 mV",
+            "Recurrent depolarization steps",
+            "200 nM U46619")
+
+# parameters: col for descriptives, before/after for test
+params <- list(
+  list(label  = "vessel diameter",
+       col    = "vessel_diameter_change_.",
+       before = "vessel_diameter_t0",
+       after  = "vessel_diameter_t6_t12"),
+  list(label  = "pericyte length",
+       col    = "pericyte_length_change_.",
+       before = "pericyte_length_t1",
+       after  = "pericyte_length_t6_t12"),
+  list(label  = "fluorescence",
+       col    = "fluorescence_change_whole_cell_.",
+       before = "fluorescence_corrected_t1",
+       after  = "fluorescence_corrected_t6_t12")
+)
+
+# normality check
+check_normality <- function(x, name) {
+  sw <- shapiro.test(x)
+  cat(sprintf("%s – Shapiro-Wilk: W = %.3f, p = %.3f\n", name, sw$statistic, sw$p.value))
+  par(mfrow = c(1, 2))
+  hist(x, main = paste("Histogram –", name), xlab = "% change",
+       col = "steelblue", border = "white")
+  qqnorm(x, main = paste("QQ-Plot –", name))
+  qqline(x, col = "red")
+  par(mfrow = c(1, 1))
+}
+
+for (g in groups) {
+  cat(sprintf("\n%s\n", toupper(g)))
+  exp_data <- df[df$experiment == g, ]
+
+  for (p in params) {
+    x <- na.omit(exp_data[[p$col]])
+    n <- length(x)
+
+    sd_val <- sd(x)
+    sem    <- sd_val / sqrt(n)
+    ci     <- qt(0.975, df = n - 1) * sem
+
+    cat(sprintf("\n  %s (n = %d)\n",                      p$label, n))
+    cat(sprintf("    Mean ± SEM     = %.2f ± %.2f%%\n",   mean(x), sem))
+    cat(sprintf("    95%% CI (mean)  : [%.2f, %.2f]%%\n", mean(x) - ci, mean(x) + ci))
+    cat(sprintf("    Median         = %.2f%%\n",           median(x)))
+    cat(sprintf("    SD             = %.2f%%\n",           sd_val))
+
+    check_normality(x, paste(g, "-", p$label))
+
+    df_long <- data.frame(
+      value     = c(exp_data[[p$before]], exp_data[[p$after]]),
+      timepoint = factor(rep(c("before", "after"), each = n),
+                         levels = c("before", "after"))
+    )
+
+    set.seed(42)
+    np <- npar.t.test.paired(value ~ timepoint, data = df_long,
+                            alternative = "two.sided",
+                            info        = FALSE,
+                            plot.simci  = FALSE,
+                            rounds      = 6)
+    summary(np)
+    plot(np)
+  }
+}
+ 
+
+
+
+
