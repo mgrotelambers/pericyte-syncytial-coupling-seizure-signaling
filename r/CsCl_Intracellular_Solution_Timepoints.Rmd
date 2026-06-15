@@ -1,0 +1,56 @@
+---
+title: "CsCl_Intracellular_Solution_Timepoints"
+author: "Mirja grote Lambers"
+date: "2026-05-03"
+output: html_document
+---
+  
+This script calculates descriptive statistics (mean ± SEM, median, SD, n) and tests for differences in membrane potential (Vm) of pericytes patched with CsCl intracellular solution at two timepoints: t0 immediately after break-in and t1 after > 600 s, using a nonparametric studentized permutation test for paired data (npar.t.test.paired, nparcomp, Konietschke & Pauly, 2012).
+
+H0: Vm does not differ systematically between t0 and t1 (relative effect p = 0.5).
+H1: Vm differs systematically between t0 and t1 (relative effect p ≠ 0.5, two-sided).
+
+
+library(nparcomp)
+
+df <- read.csv("CsCl_Intracellular_Solution_Timepoints.csv")
+
+# descriptive statistics
+desc_stats <- function(x, label) {
+  x      <- na.omit(x)
+  n      <- length(x)
+  sd_val <- sd(x)
+  cat(sprintf("\n%s (n = %d)\n", label, n))
+  cat(sprintf("Mean ± SEM = %.2f ± %.2f mV\n", mean(x), sd_val / sqrt(n)))
+  cat(sprintf("Median     = %.2f mV\n", median(x)))
+  cat(sprintf("SD         = %.2f mV\n", sd_val))
+}
+desc_stats(df$holding_t0, "t0")
+desc_stats(df$holding_t1, "t1")
+
+# normality check on differences
+diff <- df$holding_t1 - df$holding_t0
+par(mfrow = c(1, 2))
+hist(diff, main = "Differences – Histogram", xlab = "Δ Vm (mV)",
+     col = "steelblue", border = "white")
+qqnorm(diff, main = "Differences – QQ-Plot")
+qqline(diff, col = "red")
+par(mfrow = c(1, 1))
+
+# npar.t.test.paired
+df_long <- data.frame(
+  Vm        = c(df$holding_t0, df$holding_t1),
+  timepoint = factor(rep(c("t0", "t1"), each = nrow(df)))
+)
+
+set.seed(42)
+np <- npar.t.test.paired(Vm ~ timepoint, data = df_long,
+                        alternative = "two.sided",
+                        info        = FALSE,
+                        plot.simci  = FALSE,
+                        round = 6)
+summary(np)
+plot (np)
+
+
+
