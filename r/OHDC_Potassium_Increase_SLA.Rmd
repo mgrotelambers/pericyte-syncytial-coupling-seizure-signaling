@@ -1,0 +1,33 @@
+---
+title: "OHSC_Potassium_Increase_SLA"
+author: "Mirja grote Lambers"
+date: "2026-05-03"
+output: html_document
+---
+
+This script calculates descriptive statistics (mean ± SEM, median, SD, n) for changes in extracellular potassium concentration and changes in the potassium Nernst potential recorded by a potassium-sensitive electrode during SLA experiments. Baseline potassium concentration in the solution was 3 mM.
+
+# load data
+df <- read.csv("OHSC_Potassium_Increase_SLA.csv")
+
+# descriptive statistic
+get_stats <- function(data) {
+  data <- na.omit(data)
+  mean_val <- mean(data)
+  sem_val  <- sd(data) / sqrt(length(data))
+  cat(sprintf("Mean ± SEM: %.2f ± %.2f\n", mean_val, sem_val))
+  cat(sprintf("Median: %.2f\n", median(data)))
+  cat(sprintf("SD: %.2f\n", sd(data)))
+  cat(sprintf("n = %d\n", length(data)))
+}
+
+# stats for delta_Potential
+cat("\nDelta Potential\n")
+get_stats(df$delta_Potential)
+
+# stats Delta K+
+cat("\nDelta K+ (+ 3 mM baseline corrected)\n")
+get_stats(df$Delta_K. + 3)
+
+
+
