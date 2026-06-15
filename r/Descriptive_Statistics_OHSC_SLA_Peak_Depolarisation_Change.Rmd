@@ -1,0 +1,32 @@
+---
+title: "Descriptive_Statistics_OHSC_SLA_Peak_Depolarisation_Change"
+author: "Mirja grote Lambers"
+date: "2026-05-03"
+output: html_document
+---
+
+This script calculates descriptive statistics (mean ± SEM, median, SD, n) for peak depolarisation amplitudes recorded during SLA experiments across different cell types (pericytes patched with low and high Cl⁻ intracellular solution, astrocytes, and [K⁺]o-sensitive potential).
+
+# load data
+df     <- read.csv("OHSC_SLA_Peak_Depolarisation_Change.csv")
+groups <- split(df$max_amplitude_mV, df$sample_type)
+
+# descriptive statistics
+for (name in names(groups)) {
+  x      <- na.omit(groups[[name]])
+  n      <- length(x)
+  sd_val <- sd(x)
+  cat(sprintf("%s (n = %d)\n", name, n))
+  cat(sprintf("Mean ± SEM = %.1f ± %.1f mV\n", mean(x), sd_val / sqrt(n)))
+  cat(sprintf("Median     = %.1f mV\n", median(x)))
+  cat(sprintf("SD         = %.2f mV\n", sd_val))
+  cat(sprintf("\n"))
+  par(mfrow = c(1, 2))
+  hist(x, freq = FALSE, breaks = 10, col = "steelblue", border = "white",
+       main = paste(name, "– Histogram"), xlab = "Peak depolarisation (mV)", ylab = "Density")
+  qqnorm(x, main = paste(name, "– QQ-Plot"))
+  qqline(x, col = "red")
+  par(mfrow = c(1, 1))
+}
+
+
