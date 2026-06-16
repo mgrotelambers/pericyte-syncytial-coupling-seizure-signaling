@@ -1,10 +1,3 @@
----
-title: "CsCl_Intracellular_Solution_Timepoints"
-author: "Mirja grote Lambers"
-date: "2026-05-03"
-output: html_document
----
-  
 This script calculates descriptive statistics (mean ± SEM, median, SD, n) and tests for differences in membrane potential (Vm) of pericytes patched with CsCl intracellular solution at two timepoints: t0 immediately after break-in and t1 after > 600 s, using a nonparametric studentized permutation test for paired data (npar.t.test.paired, nparcomp, Konietschke & Pauly, 2012).
 
 H0: Vm does not differ systematically between t0 and t1 (relative effect p = 0.5).
