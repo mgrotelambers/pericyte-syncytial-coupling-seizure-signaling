@@ -1,10 +1,3 @@
----
-title: "Statistics_Pericyte_Resting_Membrane_Potential"
-author: "Mirja grote Lambers"
-date: "2026-05-30"
-output: html_document
----
-  
 This script calculates descriptive statistics (mean ± SEM, median, SD, n) and assesses the normality of the distribution (Shapiro-Wilk test, histogram, QQ-plot) of the pericyte resting membrane potential recorded from patched pericytes in OHSC with high and low chloride intracellular solutions.
 
 # load data
