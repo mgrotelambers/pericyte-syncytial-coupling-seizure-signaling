@@ -1,10 +1,3 @@
----
-title: "Comparison_Vessel_Diameter_Pericyte_Length_Fluorescence_Change"
-author: "Mirja grote Lambers"
-date: "2026-05-03"
-output: html_document
----
-
 This script calculates descriptive statistics (mean ± SEM, median, SD, n) and assesses normality (Shapiro-Wilk, histogram, QQ-plot) of the percentage change in pericyte vessel diameter, pericyte length, and fluorescence intensity across five experimental conditions.
 Whether values changed systematically from baseline is tested using a nonparametric studentized permutation test for paired data (npar.t.test.paired, nparcomp, Konietschke & Pauly, 2012).
 
