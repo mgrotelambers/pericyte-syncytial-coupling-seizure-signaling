@@ -1,0 +1,64 @@
+---
+title: "Correlation_Hyperpolarization_and_Resting_Potential"
+author: "Mirja grote Lambers"
+date: "2026-05-04"
+output: html_document
+---
+
+This script tests the normal distribution of the hyperpolarisation amplitude induced by the addition of pinacidil or KCl, as well as the resting potential of the pericytes. It then calculates the Spearman rank correlation coefficient for the two variables, once for the combined sample (pinacidil + KCl) and once for the KCl subset only.  
+
+
+# load data
+df <- read.csv("Correlation_Hyperpolarization_and_Resting_Potential.csv")
+
+
+# normality check
+check_normality <- function(x, name) {
+  sw <- shapiro.test(x)
+  cat(sprintf("%s – Shapiro-Wilk: W = %.3f, p = %.3f\n", name, sw$statistic, sw$p.value))
+  par(mfrow = c(1, 2))
+  hist(x, main = paste("Histogram –", name), xlab = name, col = "steelblue", border = "white")
+  qqnorm(x, main = paste("QQ-Plot –", name))
+  qqline(x, col = "red")
+  par(mfrow = c(1, 1))
+}
+check_normality(df$baseline_resting_potential_mV,  "Resting potential")
+check_normality(df$hyperpolarisation_amplitude_mV, "Hyperpolarisation amplitude")# Spearman correlations
+report_cor <- function(x, y, label) {
+  ct <- cor.test(x, y, method = "spearman")
+  p  <- ifelse(ct$p.value < 0.001, "< 0.001", sprintf("= %.3f", ct$p.value))
+  cat(sprintf("\n%s\n  rho = %.3f, p %s\n", label, ct$estimate, p))
+  invisible(ct)
+}
+cor_pooled <- report_cor(df$baseline_resting_potential_mV,
+                         df$hyperpolarisation_amplitude_mV, "Pooled (KCl + Pinacidil)")
+df_kcl <- df[df$treatment == "KCl", ]
+report_cor(df_kcl$baseline_resting_potential_mV,
+           df_kcl$hyperpolarisation_amplitude_mV, "KCl only")
+
+
+# scatter plot
+x <- df$baseline_resting_potential_mV
+y <- df$hyperpolarisation_amplitude_mV
+col_map <- c("Pinacidil" = "#7b739cd6", "KCl" = "#3c8097")
+
+fit   <- lm(y ~ x)
+x_seq <- seq(min(x, na.rm = TRUE), max(x, na.rm = TRUE), length.out = 200)
+pred  <- predict(fit, newdata = data.frame(x = x_seq), interval = "confidence")
+p     <- ifelse(cor_pooled$p.value < 0.001, "< 0.001", sprintf("= %.3f", cor_pooled$p.value))
+ann   <- sprintf("rho = %.3f, p %s", unname(cor_pooled$estimate), p)
+
+plot(x, y, type = "n", xlab = "Resting potential (mV)", ylab = "\u0394Vm (mV)", las = 1)
+polygon(c(x_seq, rev(x_seq)), c(pred[, "lwr"], rev(pred[, "upr"])),
+        col = adjustcolor("gray", alpha.f = 0.2), border = NA)
+lines(x_seq, pred[, "fit"], col = "gray40", lwd = 1.5)
+points(x, y, col = col_map[df$treatment], pch = 19, cex = 0.9)
+legend("topright",  legend = ann, bty = "n", cex = 0.9)
+legend("bottomleft", legend = names(col_map), col = col_map, pch = 19,
+       title = "Treatment", title.adj = 0, bty = "n")
+       
+       
+       
+
+       
+       
