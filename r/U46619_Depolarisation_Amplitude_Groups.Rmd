@@ -1,0 +1,66 @@
+---
+title: "U46619_Depolarisation_Amplitude_Groups"
+author: "Mirja grote Lambers"
+date: "2026-03-20"
+output: html_document
+---
+  
+This script is used to determine whether statistically significant differences in depolarisation amplitude occur following the application of U46619 across three experimental groups (intracellular solutions containing 34, 8 and 34 mM Cl⁻ followed by the addition of 10 µM Ani9). Descriptive statistics (mean ± SEM, median, standard deviation, n) and tests for normality (Shapiro-Wilk test, histogram, QQ plot) are reported for each group. A Tukey-type contrast test (nparcomp::mctp) is used to test for all pairwise differences.
+
+H0: The depolarisation amplitude does not differ systematically between any pair of groups (relative effect p = 0.5 for all pairwise contrasts).
+
+H1: At least one group differs systematically from another (relative effect p ≠ 0.5 for at least one pairwise contrast).
+
+
+library(nparcomp)
+
+# load data
+df <- read.csv("U46619_Depolarisation_Amplitude_Groups.csv")
+ 
+group_levels <- c("34 mM Cl-", "8 mM Cl-", "10 µM Ani9")
+ 
+df <- data.frame(
+  value = df$U46619_depolarisation_amplitude_mv,
+  group = factor(df$intracellular_solution, levels = group_levels)
+)
+df <- df[!is.na(df$value) & !is.na(df$group), ]
+
+
+# descriptive statistics
+invisible(Map(function(grp) {
+  x      <- df$value[df$group == grp]
+  n      <- length(x)
+  sd_val <- sd(x)
+  sem    <- sd_val / sqrt(n)
+  ci     <- qt(0.975, df = n - 1) * sem
+  sw     <- shapiro.test(x)
+ 
+  cat(sprintf("\n%s\n", grp))
+  cat(sprintf("  n              = %d\n",                  n))
+  cat(sprintf("  Mean ± SEM     = %.2f ± %.2f mV\n",     mean(x), sem))
+  cat(sprintf("  95%% CI (mean)  : [%.2f, %.2f] mV\n",   mean(x) - ci, mean(x) + ci))
+  cat(sprintf("  Median         = %.2f mV\n",             median(x)))
+  cat(sprintf("  SD             = %.2f mV\n",             sd_val))
+  cat(sprintf("  Shapiro-Wilk   : W = %.3f, p = %.3f\n", sw$statistic, sw$p.value))
+ 
+  par(mfrow = c(1, 2))
+  hist(x, freq = FALSE, col = "steelblue", border = "white",
+       main = paste(grp, "— Histogram"), xlab = "Depolarisation (mV)", ylab = "Density")
+  qqnorm(x, main = paste(grp, "— QQ-Plot"))
+  qqline(x, col = "red")
+  par(mfrow = c(1, 1))
+ 
+}, group_levels))
+
+
+# tukey-type multi comparison test
+set.seed(42)
+results <- mctp(value ~ group, data = df,
+                type        = "Tukey",
+                alternative = "two.sided",
+                info        = FALSE,
+                plot.simci  = TRUE)
+ 
+summary(results)
+
+
