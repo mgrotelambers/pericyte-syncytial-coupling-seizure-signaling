@@ -1,0 +1,65 @@
+---
+title: "Statistics_Astrocyte_Resting_Membrane_Potential"
+author: "Mirja grote Lambers"
+date: "2026-05-30"
+output: html_document
+---
+
+This script calculates the descriptive statistics (mean ± SEM, median, standard deviation, n) of the resting membrane potential (Vm) under various experimental conditions and tests for normal distribution (Shapiro-Wilk test, histogram, QQ plot). A Dunnett contrast test (nparcomp::mctp) was then used to compare the resting membrane potential of pericytes in acute rat slices (DIV 1–2) and in OHSCs with the resting membrane potential of pericytes in acute human slices, which were used as the reference group.
+
+H0: Resting Vm does not differ between any condition and human acute slice (relative effect = 0.5)
+
+H1: At least one condition produces a resting Vm that differs significantly from human acute slice (relative effect ≠ 0.5)
+
+
+install.packages("nparcomp")
+library(nparcomp)
+
+
+# load data
+df <- read.csv("Resting_Differences_OHSC_Acute_Slice_Human.csv")
+names(df)[names(df) == "condition"]  <- "Condition"
+names(df)[names(df) == "I.0.Median"] <- "Vm"
+
+groups <- c("human acute slice", "rat acute slice", "DIV 1-2", "OHSC")
+df$Condition <- factor(df$Condition, levels = groups)
+df <- df[!is.na(df$Condition) & !is.na(df$Vm), ]
+
+
+# descriptive statistics
+for (grp in groups) {
+  x  <- df$Vm[df$Condition == grp]
+  sw <- shapiro.test(x)
+  cat(sprintf("Group: %s\n", grp))
+  cat(sprintf("  n          = %d\n", length(x)))
+  cat(sprintf("  Mean ± SEM = %.2f ± %.2f mV\n", mean(x), sd(x)/sqrt(length(x))))
+  cat(sprintf("  Median     = %.2f mV\n", median(x)))
+  cat(sprintf("  SD         = %.2f mV\n", sd(x)))
+  cat(sprintf("  Shapiro-Wilk: W = %.3f, p = %.3f%s\n\n",
+              sw$statistic, sw$p.value, ifelse(sw$p.value < 0.05, " *", "")))
+}
+
+
+# normality plots
+par(mfrow = c(length(groups), 2), mar = c(4, 4, 3, 1))
+for (grp in groups) {
+  x <- df$Vm[df$Condition == grp]
+  hist(x, freq = FALSE, col = "steelblue", border = "white",
+       main = paste(grp, "— Histogram"), xlab = "Resting Vm (mV)")
+  qqnorm(x, main = paste(grp, "— QQ-Plot"))
+  qqline(x, col = "red", lwd = 1.5)
+}
+par(mfrow = c(1, 1))
+
+
+# multi comparison contrast test
+set.seed(42)
+results <- mctp(Vm ~ Condition, data = df,
+                type        = "Dunnett",
+                alternative = "two.sided",
+                info        = FALSE,
+                plot.simci  = TRUE)
+ 
+summary(results)
+
+
