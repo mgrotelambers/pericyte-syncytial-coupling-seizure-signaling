@@ -1,0 +1,64 @@
+---
+title: "Electrical_Coupling_Wilcoxon_Signed_Rank"
+author: "Mirja grote Lambers"
+date: "2026-05-30"
+output: html_document
+---
+
+This script uses a non-parametric studentised permutation test for paired data (npar.t.test.paired and nparcomp) to determine whether there is directional asymmetry in coupling strength between pericyte-pericyte and endothelial-pericyte pairs in organotypic hippocampal slice cultures (OHSC) and acute human slice preparations, as measured simultaneously using the dual-patch-clamp method. A cell was hyperpolarized using alternating current pulses of −100 pA. The coupling coefficient CC_100 was calculated as the ratio of the average voltage deflection in the receiving cell to the average voltage deflection in the stimulated cell (V_receiver / V_stimulated). 
+
+H0: CC_100 does not differ between stimulation directions (relative effect p = 0.5; symmetrical coupling)
+
+H1: CC_100 differs between stimulation directions (relative effect p ≠ 0.5; asymmetrical coupling)
+
+
+library(nparcomp)
+
+coupling_symmetry <- function(csv_file, col_1, col_2, label) {
+  df   <- read.csv(csv_file)
+  cc_1 <- df[[col_1]]
+  cc_2 <- df[[col_2]]
+  n    <- length(cc_1)
+
+  df_long <- data.frame(
+    CC        = c(cc_1, cc_2),
+    condition = factor(rep(c("dir1", "dir2"), each = n))
+  )
+
+  cat(sprintf("\n%s\n", label))
+  cat(sprintf("n pairs = %d\n",        n))
+  cat(sprintf("  %s: median = %.3f\n", col_1, median(cc_1)))
+  cat(sprintf("  %s: median = %.3f\n", col_2, median(cc_2)))
+
+  set.seed(42)
+  np <- npar.t.test.paired(CC ~ condition, data = df_long,
+                          alternative = "two.sided",
+                          info        = FALSE,
+                          plot.simci  = FALSE,
+                          rounds = 6)
+  summary(np)
+  plot(np)
+}
+
+datasets <- list(
+  list("Pericyte_Pericyte_Coupling_OHSC.csv",
+       "CC_100_1_toward_2", "CC_100_2_toward_1",
+       "Pericyte-Pericyte, OHSC"),
+  list("Endothelium_Pericyte_Coupling_OHSC.csv",
+       "CC_100_endothelia_toward_pericyte", "CC_100_pericyte_toward_endothelia",
+       "Endothelium-Pericyte, OHSC"),
+  list("Pericyte_Pericyte_Coupling_Human_Acute_Slice.csv",
+       "CC_100_1_toward_2", "CC_100_2_toward_1",
+       "Pericyte-Pericyte, Human Acute Slice"),
+  list("Endothelium_Pericyte_Coupling_Human_Acute_Slice.csv",
+       "CC_100_endothelia_toward_pericyte", "CC_100_pericyte_toward_endothelia",
+       "Endothelium-Pericyte, Human Acute Slice")
+)
+
+for (d in datasets) {
+  coupling_symmetry(d[[1]], d[[2]], d[[3]], d[[4]])
+}
+  
+
+  
+  
