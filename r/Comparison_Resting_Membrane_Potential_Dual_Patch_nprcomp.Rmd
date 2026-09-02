@@ -1,0 +1,78 @@
+---
+title: "Comparison_Resting_Membrane_Potential_Dual_Patch"
+author: "Mirja grote Lambers"
+date: "2026-05-30"
+output: html_document
+---
+
+This script calculates the descriptive statistics (mean ± SEM, median, standard deviation, n) of the delta resting membrane potential (ΔVm) of patched pericyte-pericyte and pericyte-endothelial cell pairs in organotypic hippocampal slice cultures (OHSC) and acute human slice preparations. The normality of the distribution is tested using a Shapiro-Wilk test, a histogram, and a QQ plot. A nonparametric studentized permutation test for paired data (npar.t.test.paired, nparcomp; Konietschke & Pauly, 2012) was used to test whether the resting membrane potentials of the two cells in a pair differed systematically.
+
+H0: The resting membrane potentials of the two patched cells do not differ systematically
+     (relative effect p = 0.5)
+H1: The resting membrane potentials of the two patched cells differ systematically
+     (relative effect p ≠ 0.5)
+
+
+library(nparcomp)
+
+# load data
+df_pp_human <- read.csv("Pericyte_Dual_Patch_Resting_MP_Human_Acute_Slices.csv")
+df_ep_human <- read.csv("Endothelium_Pericyte_Dual_Patch_Resting_MP_Human_Acute_Slices.csv")
+df_pp_ohsc  <- read.csv("Pericyte_Dual_Patch_Resting_MP.csv")
+df_ep_ohsc  <- read.csv("Pericyte_Endothel_Pairs_Resting_MP.csv")
+
+analyse_delta <- function(datasets) {
+  for (name in names(datasets)) {
+    df   <- datasets[[name]]
+    data <- df$delta_resting
+    n    <- length(data)
+    sem  <- sd(data) / sqrt(n)
+    sw   <- shapiro.test(data)
+
+    df_long <- data.frame(
+      Vm        = c(df$resting_channel_0, df$resting_channel_1),
+      condition = factor(rep(c("ch0", "ch1"), each = n))
+    )
+
+    cat(sprintf("\n%s\n", name))
+    cat(sprintf("n          = %d\n",             n))
+    cat(sprintf("Mean ± SEM = %.2f ± %.2f mV\n", mean(data), sem))
+    cat(sprintf("Median     = %.1f mV\n",         median(data)))
+    cat(sprintf("SD         = %.2f mV\n",         sd(data)))
+    cat(sprintf("Shapiro-Wilk : W = %.3f, p = %.3f\n", sw$statistic, sw$p.value))
+
+    par(mfrow = c(1, 2))
+    hist(data, freq = FALSE, breaks = 10, col = "steelblue", border = "white",
+         main = paste(name, "— Histogram"), xlab = "ΔV_rest (mV)", ylab = "Density")
+    qqnorm(data, main = paste(name, "— QQ-Plot"))
+    qqline(data, col = "red")
+    par(mfrow = c(1, 1))
+
+    set.seed(42)
+    np <- npar.t.test.paired(Vm ~ condition, data = df_long,
+                            alternative = "two.sided",
+                            info        = FALSE,
+                            plot.simci  = FALSE)
+    summary(np)
+    plot(np)
+  }
+}
+
+# Human Acute Slices
+datasets_human <- list(
+  "Pericyte-Pericyte" = df_pp_human,
+  "Endothel-Pericyte" = df_ep_human
+)
+cat("\nHuman Acute Slices\n")
+analyse_delta(datasets_human)
+
+# OHSC
+datasets_ohsc <- list(
+  "Pericyte-Pericyte" = df_pp_ohsc,
+  "Endothel-Pericyte" = df_ep_ohsc
+)
+cat("\nOHSC\n")
+analyse_delta(datasets_ohsc)
+
+
+
